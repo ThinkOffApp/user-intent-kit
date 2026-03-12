@@ -2,7 +2,60 @@
 
 Cross-device user intent state for AI agents. Built on [Ant Farm](https://antfarm.world).
 
-Each device publishes its own signals (watch sensors, desktop active window, phone location). The server merges them into a derived state that agents read before responding. User profile stores static preferences. Intent stores live context.
+## What is user intent in AgentOS?
+
+The [AgentOS paper](https://arxiv.org/abs/2603.08938) (Liu et al., 2026) proposes replacing traditional OS interfaces with an Agent Kernel that interprets user intent and orchestrates agents. Applications become composable skills. Natural language becomes the primary interface.
+
+A key piece the paper describes but doesn't solve: **user intent state**. This is the real-time understanding of what the user is trying to do, what context they're in, and how agents should adapt. When you're in a meeting, your agents should know to keep responses short and silent. When you're coding, they can be verbose. When you're driving, voice-only.
+
+## Why multi-device?
+
+The AgentOS paper thinks from a single-machine perspective. But people use multiple devices: a laptop for work, a phone in their pocket, a smartwatch on their wrist. Each device has unique signals:
+
+- **Watch:** wrist raise, heart rate, screen glance, calendar sync
+- **Laptop:** active application, current task, IDE context
+- **Phone:** location, motion (driving/walking/still), notification state
+
+No single device sees the full picture. The watch knows you raised your wrist. The laptop knows you're in a Zoom call. The phone knows you're at the office. Combined, these signals tell agents exactly how to reach you and what kind of response is appropriate.
+
+We searched for existing solutions to this problem. AIOS (agiresearch) has account-based sync but no per-device signal merging. Agent-Kernel (ZJU) distributes agents across machines but doesn't share user context between devices. Google's A2A protocol handles agent-to-agent communication but not user state. Anthropic's MCP handles tool context but not device signals. A few early attempts exist (fepvenancio/crdt-agent) but nothing production-ready.
+
+So we built our own.
+
+## Design choices
+
+### Two-layer architecture: Profile + Intent
+
+User state splits naturally into two layers with different update frequencies:
+
+**User Profile** (static, changes rarely): birthdate, physical characteristics, preferences for UI/food/brands, quiet hours, response style. Read once when an agent starts, cached locally. Think of it as a config file for your agents.
+
+**User Intent** (live, updates every few seconds): which device is active, what app is in the foreground, whether you're in a meeting, what task you're working on, which agents are busy. This is the real-time dashboard that agents check before every response.
+
+Separating them avoids polling static data on every request and keeps the live layer lightweight.
+
+### CRDT-ready, starting simple
+
+CRDTs (Conflict-free Replicated Data Types) allow multiple devices to edit state independently, even offline, and merge automatically when they reconnect. This matters because a smartwatch loses Bluetooth connectivity regularly.
+
+For v0, we start with a simpler approach: last-writer-wins (LWW) per device slot, with per-field timestamps. Each device owns its own slot and only writes to it, so conflicts don't happen in practice. The server merges by reading all device slots together.
+
+If offline merge becomes a real need (e.g., watch accumulates sensor readings while disconnected), the storage layer can upgrade to Yjs CRDT documents without changing the client API.
+
+### API design
+
+The API follows REST conventions on Ant Farm:
+
+- `GET /api/v1/profile/{user_id}` - read static profile
+- `GET /api/v1/intent/{user_id}` - read merged intent state across all devices
+- `PATCH /api/v1/intent/{user_id}/{device_id}` - partial update to a device slot (no accidental field wipes)
+- `PATCH /api/v1/intent/{user_id}/agents/{agent_name}` - publish agent status
+
+The server computes a `derived` object from raw device signals: urgency mode, available modalities, preferred device, whether to suppress audio. Agents read this derived state instead of parsing raw signals themselves.
+
+Heartbeats keep device slots alive (90s TTL for devices, 300s for agents). Stale slots are excluded from derived state computation. The server deduplicates heartbeats within 5s to prevent write churn.
+
+Full API spec with error codes, auth model, and integration details is on the [thinkoff-development scratchpad](https://antfarm.world) (pad 3be0e08c).
 
 ## Install
 
@@ -91,18 +144,6 @@ desktop.start();
 // Stop when done
 desktop.stop();
 ```
-
-## Two-layer architecture
-
-**User Profile** (static, read at startup): birthdate, preferences, quiet hours, response style.
-
-**User Intent** (live, polled frequently): device signals, active tasks, agent status. Server computes derived state (urgency mode, available modalities, preferred device).
-
-Agents combine both: profile says "prefers brief" + intent says "on watch in meeting" = ultra-short text-only reply.
-
-## API spec
-
-See the full API spec on the [thinkoff-development scratchpad](https://antfarm.world) (pad 3be0e08c).
 
 ## License
 
