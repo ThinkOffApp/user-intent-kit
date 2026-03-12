@@ -32,7 +32,8 @@ export class OpenClawAdapter {
     }
 
     const derived = intent.derived || {};
-    const prefs = profile?.agent_prefs || {};
+    const agentPrefs = profile?.agent_prefs || {};
+    const userPrefs = profile?.preferences || {};
     const parts = [];
 
     // Device context
@@ -45,14 +46,14 @@ export class OpenClawAdapter {
       parts.push('User is in a meeting. Text only, be concise.');
     }
 
-    // Response style preference
-    if (prefs.response_style === 'brief') {
+    // Response style preference (lives under preferences, not agent_prefs)
+    if (userPrefs.response_style === 'brief') {
       parts.push('User prefers brief responses.');
     }
 
     // Max length
-    if (prefs.max_response_length) {
-      parts.push(`Keep response under ${prefs.max_response_length} characters.`);
+    if (agentPrefs.max_response_length) {
+      parts.push(`Keep response under ${agentPrefs.max_response_length} characters.`);
     }
 
     // Emergency only mode

@@ -11,6 +11,7 @@ export class IntentClient {
   #deviceId;
   #heartbeatTimer;
   #heartbeatIntervalMs;
+  #timeoutMs;
 
   /**
    * @param {object} opts
@@ -19,13 +20,15 @@ export class IntentClient {
    * @param {string} opts.userId - User ID to read/write intent for
    * @param {string} [opts.deviceId] - Device slot this client writes to (omit for read-only)
    * @param {number} [opts.heartbeatIntervalMs=30000] - Heartbeat interval in ms
+   * @param {number} [opts.timeoutMs=10000] - Request timeout in ms
    */
-  constructor({ baseUrl, apiKey, userId, deviceId, heartbeatIntervalMs = 30000 }) {
+  constructor({ baseUrl, apiKey, userId, deviceId, heartbeatIntervalMs = 30000, timeoutMs = 10000 }) {
     this.#baseUrl = baseUrl.replace(/\/+$/, '');
     this.#apiKey = apiKey;
     this.#userId = userId;
     this.#deviceId = deviceId || null;
     this.#heartbeatIntervalMs = Math.max(heartbeatIntervalMs, 10000);
+    this.#timeoutMs = timeoutMs;
     this.#heartbeatTimer = null;
   }
 
@@ -124,12 +127,20 @@ export class IntentClient {
       'Content-Type': 'application/json',
     };
 
-    const opts = { method, headers };
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.#timeoutMs);
+
+    const opts = { method, headers, signal: controller.signal };
     if (body && method !== 'GET' && method !== 'DELETE') {
       opts.body = JSON.stringify(body);
     }
 
-    const res = await fetch(url, opts);
+    let res;
+    try {
+      res = await fetch(url, opts);
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (!res.ok) {
       const text = await res.text().catch(() => '');

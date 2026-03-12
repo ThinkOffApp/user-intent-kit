@@ -4,8 +4,11 @@ import { execSync } from 'node:child_process';
 import { platform } from 'node:os';
 
 /**
- * Desktop Adapter - detects active window and context on macOS/Linux.
+ * Desktop Adapter - detects active window and context on macOS.
  * Publishes desktop device state to intent API.
+ *
+ * Currently macOS only (uses osascript for active window detection).
+ * Linux support planned for a future release.
  */
 export class DesktopAdapter {
   #client;
