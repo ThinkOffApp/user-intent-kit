@@ -4,11 +4,15 @@
   "description": "Cross-device user intent state for AI agents. Profile + live signals + derived state.",
   "type": "module",
   "main": "src/index.js",
+  "bin": {
+    "intent": "./bin/intent.js"
+  },
   "exports": {
     ".": "./src/index.js",
     "./adapters/desktop": "./src/adapters/desktop.js",
     "./adapters/openclaw": "./src/adapters/openclaw.js",
-    "./adapters/iak": "./src/adapters/iak.js"
+    "./adapters/iak": "./src/adapters/iak.js",
+    "./adapters/browser": "./src/adapters/browser.js"
   },
   "scripts": {
     "test": "node --test test/client.test.js"

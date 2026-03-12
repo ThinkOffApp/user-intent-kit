@@ -95,7 +95,13 @@ client.startHeartbeat();
 
 ## Adapters
 
-### [IDE Agent Kit](https://github.com/ThinkOffApp/ide-agent-kit)
+Platform-specific adapters wrap the core `IntentClient` with ergonomic helpers.
+
+### Included adapters
+
+#### [IDE Agent Kit](https://github.com/ThinkOffApp/ide-agent-kit) (Node.js)
+
+For IDE-connected agents that poll rooms and respond to messages.
 
 ```js
 import { IntentClient, IAKAdapter } from 'user-intent-kit';
@@ -103,18 +109,14 @@ import { IntentClient, IAKAdapter } from 'user-intent-kit';
 const client = new IntentClient({ baseUrl, apiKey, userId });
 const ideAgentKit = new IAKAdapter(client, { agentHandle: '@claudemm' });
 
-// On each room poll cycle
 await ideAgentKit.publishStatus({ status: 'active', currentTask: 'reviewing PR #5' });
-
-// Before nudging
 if (await ideAgentKit.shouldSuppressNudge()) return;
-
-// Get response hints
 const hint = await ideAgentKit.getResponseHint();
-// { maxLength: 200, style: 'brief', codeBlocks: false }
 ```
 
-### OpenClaw
+#### OpenClaw (Node.js)
+
+For [OpenClaw](https://github.com/AntfarmFinancial/openclaw) bots. Generates system prompt modifiers based on user intent state.
 
 ```js
 import { IntentClient, OpenClawAdapter } from 'user-intent-kit';
@@ -122,28 +124,137 @@ import { IntentClient, OpenClawAdapter } from 'user-intent-kit';
 const client = new IntentClient({ baseUrl, apiKey, userId });
 const oc = new OpenClawAdapter(client);
 
-// Pre-response hook: get system prompt modifier
 const modifier = await oc.getPromptModifier();
-// "User is in a meeting. Text only, be concise. User prefers brief responses."
-
-// Publish bot status
+// "User is in a meeting. Text only, be concise."
 await oc.publishBotStatus('sally', { status: 'busy', task: 'transcribing call' });
 ```
 
-### Desktop
+An OpenClaw plugin is also included at `src/plugins/openclaw/` that hooks into `before_prompt_build` to inject intent context automatically.
+
+#### Desktop (Node.js, macOS)
+
+Detects the active window and infers user context (meeting, coding, browsing). Publishes state automatically on an interval.
 
 ```js
 import { IntentClient, DesktopAdapter } from 'user-intent-kit';
 
 const client = new IntentClient({ baseUrl, apiKey, userId, deviceId: 'macbook' });
 const desktop = new DesktopAdapter(client);
-
-// Start background state publishing (detects active window, infers context)
-desktop.start();
-
-// Stop when done
-desktop.stop();
+desktop.start(); // background polling + publishing
 ```
+
+Currently macOS only (uses `osascript` for active window detection). Linux and Windows adapters are welcome contributions.
+
+#### Browser (Node.js / browser)
+
+For web dashboards showing live intent state. Polls the API and calls back on each update.
+
+```js
+import { BrowserAdapter } from 'user-intent-kit/adapters/browser';
+import { IntentClient } from 'user-intent-kit';
+
+const client = new IntentClient({ baseUrl, apiKey, userId });
+const browser = new BrowserAdapter(client, {
+  onUpdate: (intent) => renderDashboard(intent),
+  pollIntervalMs: 5000,
+});
+browser.start();
+```
+
+#### CLI
+
+Command-line tool for reading and writing intent state. Useful for scripts and debugging.
+
+```bash
+npm install -g user-intent-kit
+
+export INTENT_API_BASE=https://antfarm.world/api/v1
+export INTENT_API_KEY=xfb_your_key
+export INTENT_USER_ID=petrus
+export INTENT_DEVICE_ID=macbook
+
+intent get                     # show full intent state
+intent profile                 # show user profile
+intent derived                 # show derived state only
+intent patch context=coding    # update device state
+intent heartbeat               # send heartbeat
+```
+
+#### Swift (watchOS / iOS / macOS)
+
+Native Swift client with async/await. Includes a `WatchAdapter` for Apple Watch with alert mode detection.
+
+```swift
+let client = IntentClient(
+    baseURL: URL(string: "https://antfarm.world/api/v1")!,
+    apiKey: "xfb_your_key",
+    userId: "petrus",
+    deviceId: "apple-watch"
+)
+
+let adapter = WatchAdapter(client: client)
+try await adapter.publishState(wristRaise: true, heartRate: 72)
+let mode = try await adapter.alertMode() // .full, .textOnly, or .silent
+```
+
+See `swift/` for the SPM package. Targets watchOS 9+, iOS 16+, macOS 13+.
+
+#### Kotlin (Wear OS / Android)
+
+Kotlin client using coroutines and `HttpURLConnection` (no external dependencies). Includes a `WatchAdapter` for Wear OS smartwatches.
+
+```kotlin
+val client = IntentClient(
+    baseUrl = "https://antfarm.world/api/v1",
+    apiKey = "xfb_your_key",
+    userId = "petrus",
+    deviceId = "wear-os-watch"
+)
+
+val adapter = WatchAdapter(client)
+adapter.publishState(wristRaise = true, heartRate = 72)
+val mode = adapter.alertMode() // FULL, TEXT_ONLY, or SILENT
+```
+
+See `kotlin/` for the Gradle project.
+
+#### Python
+
+Zero-dependency Python client using `urllib.request`. Threading-based heartbeat.
+
+```python
+from user_intent_kit import IntentClient
+
+client = IntentClient(
+    base_url="https://antfarm.world/api/v1",
+    api_key="xfb_your_key",
+    user_id="petrus",
+    device_id="server",
+)
+
+intent = client.get_intent()
+print(intent["derived"]["urgency_mode"])
+
+client.start_heartbeat()  # background thread
+```
+
+See `python/` for the package. Requires Python >= 3.9.
+
+### Adapters we'd like to see
+
+Community contributions welcome. Some ideas:
+
+- **Linux Desktop** - X11/Wayland active window detection (similar to the macOS Desktop adapter)
+- **Windows Desktop** - Win32 API for active window and focus tracking
+- **Home Assistant** - Publish room presence, lighting state, and smart home context
+- **Slack/Teams** - Detect meeting status, DND mode, presence from workplace chat
+- **Calendar** - Feed upcoming events into intent state (busy, free, focus time)
+- **Location** - Geofencing-based context (home, office, commuting)
+- **Health sensors** - Continuous HR, stress level, sleep state from wearables
+- **Vehicle** - CarPlay/Android Auto integration for driving context
+- **Accessibility** - Screen reader state, magnification, input method preferences
+
+To build an adapter: wrap `IntentClient`, call `patchDevice()` with your signals, and optionally read `getIntent()` to adapt behavior. See any included adapter for the pattern.
 
 ## License
 
