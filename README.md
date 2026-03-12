@@ -95,7 +95,7 @@ client.startHeartbeat();
 
 ## Adapters
 
-### IDE Agent Kit
+### IDE Agent Kit (IAK)
 
 ```js
 import { IntentClient, IAKAdapter } from 'user-intent-kit';
