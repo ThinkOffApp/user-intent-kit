@@ -95,22 +95,22 @@ client.startHeartbeat();
 
 ## Adapters
 
-### IDE Agent Kit (IAK)
+### [IDE Agent Kit](https://github.com/ThinkOffApp/ide-agent-kit)
 
 ```js
 import { IntentClient, IAKAdapter } from 'user-intent-kit';
 
 const client = new IntentClient({ baseUrl, apiKey, userId });
-const iak = new IAKAdapter(client, { agentHandle: '@claudemm' });
+const ideAgentKit = new IAKAdapter(client, { agentHandle: '@claudemm' });
 
 // On each room poll cycle
-await iak.publishStatus({ status: 'active', currentTask: 'reviewing PR #5' });
+await ideAgentKit.publishStatus({ status: 'active', currentTask: 'reviewing PR #5' });
 
 // Before nudging
-if (await iak.shouldSuppressNudge()) return;
+if (await ideAgentKit.shouldSuppressNudge()) return;
 
 // Get response hints
-const hint = await iak.getResponseHint();
+const hint = await ideAgentKit.getResponseHint();
 // { maxLength: 200, style: 'brief', codeBlocks: false }
 ```
 
