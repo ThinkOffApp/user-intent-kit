@@ -1,6 +1,6 @@
 # user-intent-kit
 
-Cross-device user intent state for AI agents. Built on [Ant Farm](https://antfarm.world).
+Cross-device user intent state for AI agents. 
 
 ## What is user intent in AgentOS?
 
