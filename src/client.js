@@ -95,6 +95,63 @@ export class IntentClient {
     return derived.preferred_device || null;
   }
 
+  // --- 2-Level State Model ---
+
+  /**
+   * Overall life state of the user.
+   * @returns {Promise<string>} One of: working, resting, meeting_people, outdoors, exercising, sleeping, unknown, transitioning
+   */
+  async overallState() {
+    const derived = await this.getDerived();
+    return derived.overall_state || 'unknown';
+  }
+
+  /**
+   * Per-state reachability mode (how accessible the user is within their current state).
+   * @returns {Promise<string>} State-specific reachability like desktop, mobile_full_focus, watch_only, emergency_only, etc.
+   */
+  async reachabilityMode() {
+    const derived = await this.getDerived();
+    return derived.reachability_mode || 'unknown';
+  }
+
+  /**
+   * Whether background/dreaming work is appropriate right now.
+   * True when user is away, sleeping, or idle. False during active focus sessions.
+   * @returns {Promise<boolean>}
+   */
+  async isDreamingAllowed() {
+    const derived = await this.getDerived();
+    const state = derived.overall_state || 'unknown';
+    const urgency = derived.urgency_mode || 'normal';
+    // Dreaming allowed when user is sleeping, resting, or away
+    const dreamStates = ['sleeping', 'resting', 'unknown'];
+    if (dreamStates.includes(state)) return true;
+    // Also allowed if urgency is not emergency-only and not in active focus
+    if (urgency === 'emergency-only') return false;
+    if (state === 'working') {
+      const reachability = derived.reachability_mode || 'unknown';
+      // Only light phase during active work sessions
+      return reachability !== 'desktop' && reachability !== 'mobile_full_focus';
+    }
+    return true;
+  }
+
+  /**
+   * Whether only light-phase dreaming should run (vs full deep consolidation).
+   * True during softer active sessions where full dreaming would be disruptive.
+   * @returns {Promise<boolean>}
+   */
+  async isLightDreamingOnly() {
+    const derived = await this.getDerived();
+    const state = derived.overall_state || 'unknown';
+    if (state === 'working') return true;
+    if (state === 'meeting_people') return true;
+    if (state === 'outdoors') return true;
+    if (state === 'exercising') return true;
+    return false;
+  }
+
   // --- Heartbeat ---
 
   async heartbeat() {
