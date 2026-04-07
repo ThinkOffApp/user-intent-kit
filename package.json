@@ -1,11 +1,12 @@
 {
   "name": "user-intent-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Cross-device user intent state for AI agents. Profile + live signals + derived state.",
   "type": "module",
   "main": "src/index.js",
   "bin": {
-    "intent": "./bin/intent.js"
+    "intent": "./bin/intent.js",
+    "uik-daemon": "./bin/uik-daemon.js"
   },
   "exports": {
     ".": "./src/index.js",
@@ -15,7 +16,8 @@
     "./adapters/browser": "./src/adapters/browser.js"
   },
   "scripts": {
-    "test": "node --test test/client.test.js"
+    "test": "node --test test/client.test.js",
+    "daemon": "node bin/uik-daemon.js"
   },
   "keywords": [
     "agent",
