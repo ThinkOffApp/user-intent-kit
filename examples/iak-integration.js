@@ -56,9 +56,13 @@ console.log(`Suppress nudges: ${suppress}`);
 const hint = await iak.getResponseHint();
 console.log(`Response hint:`, hint);
 
-// Keep running
+// Keep running. The DesktopAdapter's internal setInterval is intentionally
+// unref'd so library embedders can exit cleanly — we add a referenced
+// keep-alive here so this example works as a long-running process.
 console.log('Running... (Ctrl+C to stop)');
+const keepAlive = setInterval(() => {}, 1 << 30);
 process.on('SIGINT', async () => {
+  clearInterval(keepAlive);
   desktop.stop();
   await iak.publishStatus({ status: 'offline', currentTask: null }).catch(() => {});
   console.log('Stopped.');

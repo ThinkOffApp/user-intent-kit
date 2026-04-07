@@ -65,6 +65,26 @@ npm install user-intent-kit
 
 No dependencies. Node.js >= 18.
 
+## Running as a daemon
+
+The `uik-daemon` bin publishes desktop state and agent heartbeats to the intent API on a 30s interval. It is the recommended way to keep your device and agent slots live on the dashboard.
+
+```bash
+export INTENT_API_KEY=xfb_your_key
+export INTENT_USER_ID=petrus
+export INTENT_AGENT_HANDLE=@claudemb
+export INTENT_DEVICE_ID=macbook
+npx uik-daemon
+```
+
+For a persistent setup under launchd (macOS) or systemd (Linux), see `examples/claudemb-launchd.plist` and `examples/claudemb-daemon.sh` which mirror a working production deployment. The pattern is:
+
+1. A LaunchAgent plist that spawns a detached tmux session (decouples the daemon from your login shell).
+2. A shell wrapper that exports the required env vars and execs `node bin/uik-daemon.js`.
+3. Bootstrap with `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.<agent>.uik.plist`.
+
+> Note: The older `examples/iak-integration.js` is a one-shot demo and will exit once its setInterval timer is unref'd. Use `uik-daemon` for long-running deployments.
+
 ## Quick start
 
 ```js

@@ -22,3 +22,11 @@ See `examples/claudemb-launchd.plist` and `examples/claudemb-daemon.sh` for a wo
 ## 0.1.0
 
 Initial release: IntentClient + IAK/Desktop/OpenClaw adapters, 2-level derived state.
+
+## 0.2.1 (2026-04-07)
+
+### Fixed
+- `examples/iak-integration.js` would silently exit once the DesktopAdapter's internal `setInterval` was unref'd, making it useless as a long-running daemon. Added a referenced keep-alive and clarified the comment.
+
+### Docs
+- README: new "Running as a daemon" section documenting `npx uik-daemon` and the launchd+tmux deployment pattern. Notes the example file is a one-shot demo; `uik-daemon` is the supported long-running path.
