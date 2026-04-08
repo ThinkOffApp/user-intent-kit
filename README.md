@@ -2,8 +2,6 @@
 
 Cross-device user intent state for AI agents.
 
-
-
 ## What is user intent in AgentOS?
 
 The [AgentOS paper](https://arxiv.org/abs/2603.08938) (Liu et al., 2026) proposes replacing traditional OS interfaces with an Agent Kernel that interprets user intent and orchestrates agents. Applications become composable skills. Natural language becomes the primary interface.
