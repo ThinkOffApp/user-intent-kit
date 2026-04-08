@@ -51,7 +51,13 @@ The API follows REST conventions on GroupMind:
 - `PATCH /api/v1/intent/{user_id}/{device_id}` - partial update to a device slot (no accidental field wipes)
 - `PATCH /api/v1/intent/{user_id}/agents/{agent_name}` - publish agent status
 
-The server computes a `derived` object from raw device signals: urgency mode, available modalities, preferred device, whether to suppress audio. Agents read this derived state instead of parsing raw signals themselves.
+The server computes a `derived` object from raw device signals. Agents read this derived state instead of parsing raw signals themselves. It has two layers:
+
+**Coarse fields** (v0, stable): `urgency_mode` (`normal` / `text-only` / `emergency-only`), `available_modalities` (`read` / `listen` / `speak`), `preferred_device`, `suppress_audio`. Good for quick "can I talk?" and "which device?" questions.
+
+**Two-level state model** (v0.2+): `overall_state` + `reachability_mode`. The overall state is a human-readable life mode: `working`, `resting`, `meeting_people`, `outdoors`, `exercising`, `sleeping`, `unknown`, `transitioning`. Inside each state, `reachability_mode` tells the agent how interruptible the user is right now (for example `desktop` / `mobile_full_focus` / `watch_only` / `do_not_disturb` / `emergency_only`). The two-level model lets agents separate "where is the user?" from "how hard is it to reach them?" - a user can be `working` but `do_not_disturb`, or `resting` but `mobile_relaxed`. Raw sensor signals (watch HR, screen state, calendar, active app) stay as evidence inputs and feed into this derivation, never as user-facing states themselves.
+
+Client helpers cover both layers: `client.isInMeeting()`, `client.shouldSuppressAudio()`, `client.preferredDevice()` for the coarse fields, and `client.overallState()`, `client.reachabilityMode()`, `client.isDreamingAllowed()`, `client.isLightDreamingOnly()` for the two-level model. Background-work gating in [ide-agent-kit](https://github.com/ThinkOffApp/ide-agent-kit) uses `isDreamingAllowed` / `isLightDreamingOnly` to decide when to run consolidation phases.
 
 Heartbeats keep device and agent slots alive on a 900s TTL. Stale slots are excluded from derived state computation and surface in `stale_devices` / `stale_agents` so other agents can detect offline peers. The server deduplicates heartbeats within 5s to prevent write churn. The bundled `uik-daemon` (see [Running as a daemon](#running-as-a-daemon)) re-publishes both device and agent state on a 30s `POLL_INTERVAL_MS` cadence so neither slot expires while the daemon is running.
 
