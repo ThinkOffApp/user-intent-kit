@@ -53,7 +53,7 @@ The API follows REST conventions on Ant Farm:
 
 The server computes a `derived` object from raw device signals: urgency mode, available modalities, preferred device, whether to suppress audio. Agents read this derived state instead of parsing raw signals themselves.
 
-Heartbeats keep device slots alive (90s TTL for devices, 300s for agents). Stale slots are excluded from derived state computation. The server deduplicates heartbeats within 5s to prevent write churn.
+Heartbeats keep device and agent slots alive on a 900s TTL. Stale slots are excluded from derived state computation and surface in `stale_devices` / `stale_agents` so other agents can detect offline peers. The server deduplicates heartbeats within 5s to prevent write churn. The bundled `uik-daemon` (see [Running as a daemon](#running-as-a-daemon)) re-publishes both device and agent state on a 30s `POLL_INTERVAL_MS` cadence so neither slot expires while the daemon is running.
 
 Full API spec with error codes, auth model, and integration details is on the [thinkoff-development scratchpad](https://antfarm.world) (pad 3be0e08c).
 
@@ -275,6 +275,15 @@ Community contributions welcome. Some ideas:
 - **Accessibility** - Screen reader state, magnification, input method preferences
 
 To build an adapter: wrap `IntentClient`, call `patchDevice()` with your signals, and optionally read `getIntent()` to adapt behavior. See any included adapter for the pattern.
+
+## Releases
+
+Current: **v0.2.2** (2026-04-08). See [CHANGELOG.md](CHANGELOG.md) for the per-release changelog. The kit is not yet published on npm; install from source or via the GitHub repository URL until the first npm release lands.
+
+Highlights since v0.1.0:
+- **v0.2.0**: added `bin/uik-daemon.js`, the persistent background daemon that publishes device and agent heartbeats. Exposed as the `uik-daemon` npm bin and runnable via `npx uik-daemon`.
+- **v0.2.1**: daemon docs in README (`Running as a daemon`). Fixed silent-exit in `examples/iak-integration.js` so the demo no longer terminates when its `setInterval` is unref'd.
+- **v0.2.2**: `uik-daemon` now re-publishes agent status on the same `POLL_INTERVAL_MS` cadence as the desktop adapter heartbeat. Before this fix the agent slot would expire after its TTL even though the device slot stayed fresh. Caught while dogfooding on the Mac mini.
 
 ## License
 
