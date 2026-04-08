@@ -13,4 +13,9 @@ export INTENT_DEVICE_ID="${INTENT_DEVICE_ID:-macbook}"
 
 cd /Users/petrus/AndroidStudioProjects/user-intent-kit
 
-exec /opt/homebrew/bin/node examples/iak-integration.js >>/tmp/claudemb-uik.log 2>&1
+# Use bin/uik-daemon.js (the persistent daemon entry point added in v0.2.0).
+# Do NOT use examples/iak-integration.js here: it was originally a one-shot
+# demo whose unref'd setInterval lets the process exit silently, which broke
+# both @claudemb's MBP and @claudemm's mac-mini production daemons in
+# dogfooding (see CHANGELOG 0.2.1).
+exec /opt/homebrew/bin/node bin/uik-daemon.js >>/tmp/claudemb-uik.log 2>&1
