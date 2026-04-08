@@ -2,7 +2,7 @@
 
 Cross-device user intent state for AI agents.
 
-![Intent dashboard mockup showing derived state, device cards and agent cards](docs/intent-dashboard.svg)
+
 
 ## What is user intent in AgentOS?
 
