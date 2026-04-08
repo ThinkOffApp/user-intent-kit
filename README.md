@@ -44,7 +44,7 @@ If offline merge becomes a real need (e.g., watch accumulates sensor readings wh
 
 ### API design
 
-The API follows REST conventions on Ant Farm:
+The API follows REST conventions on GroupMind:
 
 - `GET /api/v1/profile/{user_id}` - read static profile
 - `GET /api/v1/intent/{user_id}` - read merged intent state across all devices
@@ -55,7 +55,7 @@ The server computes a `derived` object from raw device signals: urgency mode, av
 
 Heartbeats keep device and agent slots alive on a 900s TTL. Stale slots are excluded from derived state computation and surface in `stale_devices` / `stale_agents` so other agents can detect offline peers. The server deduplicates heartbeats within 5s to prevent write churn. The bundled `uik-daemon` (see [Running as a daemon](#running-as-a-daemon)) re-publishes both device and agent state on a 30s `POLL_INTERVAL_MS` cadence so neither slot expires while the daemon is running.
 
-Full API spec with error codes, auth model, and integration details is on the [thinkoff-development scratchpad](https://antfarm.world) (pad 3be0e08c).
+Full API spec with error codes, auth model, and integration details is on the [thinkoff-development scratchpad](https://groupmind.one) (pad 3be0e08c).
 
 ## Install
 
@@ -91,7 +91,7 @@ For a persistent setup under launchd (macOS) or systemd (Linux), see `examples/c
 import { IntentClient } from 'user-intent-kit';
 
 const client = new IntentClient({
-  baseUrl: 'https://antfarm.world/api/v1',
+  baseUrl: 'https://groupmind.one/api/v1',
   apiKey: 'xfb_your_key',
   userId: 'petrus',
   deviceId: 'macbook',
@@ -188,7 +188,7 @@ Command-line tool for reading and writing intent state. Useful for scripts and d
 ```bash
 npm install -g user-intent-kit
 
-export INTENT_API_BASE=https://antfarm.world/api/v1
+export INTENT_API_BASE=https://groupmind.one/api/v1
 export INTENT_API_KEY=xfb_your_key
 export INTENT_USER_ID=petrus
 export INTENT_DEVICE_ID=macbook
@@ -206,7 +206,7 @@ Native Swift client with async/await. Includes a `WatchAdapter` for Apple Watch 
 
 ```swift
 let client = IntentClient(
-    baseURL: URL(string: "https://antfarm.world/api/v1")!,
+    baseURL: URL(string: "https://groupmind.one/api/v1")!,
     apiKey: "xfb_your_key",
     userId: "petrus",
     deviceId: "apple-watch"
@@ -225,7 +225,7 @@ Kotlin client using coroutines and `HttpURLConnection` (no external dependencies
 
 ```kotlin
 val client = IntentClient(
-    baseUrl = "https://antfarm.world/api/v1",
+    baseUrl = "https://groupmind.one/api/v1",
     apiKey = "xfb_your_key",
     userId = "petrus",
     deviceId = "wear-os-watch"
@@ -246,7 +246,7 @@ Zero-dependency Python client using `urllib.request`. Threading-based heartbeat.
 from user_intent_kit import IntentClient
 
 client = IntentClient(
-    base_url="https://antfarm.world/api/v1",
+    base_url="https://groupmind.one/api/v1",
     api_key="xfb_your_key",
     user_id="petrus",
     device_id="server",
