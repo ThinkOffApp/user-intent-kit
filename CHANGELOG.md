@@ -30,3 +30,8 @@ Initial release: IntentClient + IAK/Desktop/OpenClaw adapters, 2-level derived s
 
 ### Docs
 - README: new "Running as a daemon" section documenting `npx uik-daemon` and the launchd+tmux deployment pattern. Notes the example file is a one-shot demo; `uik-daemon` is the supported long-running path.
+
+## 0.2.2 (2026-04-08)
+
+### Fixed
+- `uik-daemon` published the agent status only once at startup, so the agent slot went stale after its TTL while the device slot stayed fresh from the DesktopAdapter heartbeat. The daemon now re-publishes agent status on the same `POLL_INTERVAL_MS` cadence as the desktop adapter. Caught while dogfooding on the Mac mini.

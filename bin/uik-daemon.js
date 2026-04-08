@@ -39,10 +39,18 @@ const desktop = new DesktopAdapter(client, { pollIntervalMs });
 desktop.start();
 await iak.publishStatus({ status: 'active', currentTask: null });
 
+// Re-publish agent status on the same interval as the desktop heartbeat,
+// otherwise the agent slot expires after its TTL while the device stays
+// fresh — caught dogfooding on 2026-04-08.
+const agentTimer = setInterval(() => {
+  iak.publishStatus({ status: 'active', currentTask: null }).catch(() => {});
+}, pollIntervalMs);
+
 console.log(`uik-daemon: device=${deviceId} agent=${agentHandle} interval=${pollIntervalMs}ms`);
 
 const shutdown = async (sig) => {
   console.log(`uik-daemon: ${sig}, shutting down`);
+  clearInterval(agentTimer);
   desktop.stop();
   await iak.publishStatus({ status: 'offline', currentTask: null }).catch(() => {});
   process.exit(0);
