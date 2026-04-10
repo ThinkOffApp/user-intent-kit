@@ -15,7 +15,7 @@ export class IntentClient {
 
   /**
    * @param {object} opts
-   * @param {string} opts.baseUrl - Ant Farm API base URL (e.g. "https://antfarm.world/api/v1")
+   * @param {string} opts.baseUrl - Ant Farm API base URL (e.g. "https://groupmind.one/api/v1")
    * @param {string} opts.apiKey - X-API-Key for authentication
    * @param {string} opts.userId - User ID to read/write intent for
    * @param {string} [opts.deviceId] - Device slot this client writes to (omit for read-only)
