@@ -26,7 +26,7 @@ export class IntentClient {
     this.#baseUrl = baseUrl.replace(/\/+$/, '');
     this.#apiKey = apiKey;
     this.#userId = userId;
-    this.#deviceId = deviceId || null;
+    this.#deviceId = deviceId ? deviceId.toLowerCase() : null;
     this.#heartbeatIntervalMs = Math.max(heartbeatIntervalMs, 10000);
     this.#timeoutMs = timeoutMs;
     this.#heartbeatTimer = null;
@@ -65,7 +65,7 @@ export class IntentClient {
   }
 
   async patchAgent(agentName, fields) {
-    return this.#request('PATCH', `/intent/${this.#userId}/agents/${agentName}`, fields);
+    return this.#request('PATCH', `/intent/${this.#userId}/agents/${agentName.toLowerCase()}`, fields);
   }
 
   // --- Derived state helpers ---
